@@ -1,3 +1,4 @@
+import path from "node:path";
 import { ensureDir, writeJsonFile } from "./fs";
 import type { NormalizedDataset, OverlapReport, CandidateCard } from "./types";
 
@@ -68,6 +69,7 @@ export async function generateStaticSite(
   outputDir: string,
   report: OverlapReport,
 ): Promise<void> {
+  const distDir = path.join(outputDir, "dist");
   const html = `<!doctype html>
 <html lang="en">
   <head>
@@ -123,5 +125,5 @@ export async function generateStaticSite(
     </main>
   </body>
 </html>`;
-  await Bun.write(`${outputDir}/index.html`, html);
+  await Bun.write(`${distDir}/index.html`, html);
 }
