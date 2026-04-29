@@ -1,14 +1,20 @@
 import { ensureDir, writeJsonFile } from "./fs";
 import type { NormalizedDataset, OverlapReport, CandidateCard } from "./types";
 
-export async function writeNormalizedArtifacts(outputDir: string, dataset: NormalizedDataset): Promise<void> {
+export async function writeNormalizedArtifacts(
+  outputDir: string,
+  dataset: NormalizedDataset,
+): Promise<void> {
   const normalizedDir = `${outputDir}/normalized`;
   await ensureDir(normalizedDir);
   await writeJsonFile(`${normalizedDir}/packs.json`, dataset.packs);
   await writeJsonFile(`${normalizedDir}/cards.json`, dataset.cards);
 }
 
-export async function writeUiArtifacts(outputDir: string, report: OverlapReport): Promise<void> {
+export async function writeUiArtifacts(
+  outputDir: string,
+  report: OverlapReport,
+): Promise<void> {
   const uiDir = `${outputDir}/ui/v1`;
   await ensureDir(uiDir);
   await writeJsonFile(`${uiDir}/summary.json`, report.summary);
@@ -30,7 +36,8 @@ function renderPackList(packNames: string[]): string {
 }
 
 function renderCard(card: CandidateCard): string {
-  const description = card.description.trim().length > 0 ? card.description : "No description";
+  const description =
+    card.description.trim().length > 0 ? card.description : "No description";
   return `<article class="deck-card">
   <img src="${escapeHtml(card.imageUrl)}" alt="${escapeHtml(card.name)}" loading="lazy" />
   <div class="deck-card-meta">
@@ -52,13 +59,15 @@ function renderCard(card: CandidateCard): string {
 }
 
 function renderBucketCards(cards: CandidateCard[]): string {
-  if (cards.length === 0) return `<p class="empty">No cards in this bucket.</p>`;
+  if (cards.length === 0)
+    return `<p class="empty">No cards in this bucket.</p>`;
   return `<div class="deck-grid">${cards.map(renderCard).join("\n")}</div>`;
 }
 
-export async function generateStaticSite(outputDir: string, report: OverlapReport): Promise<void> {
-  const siteDir = `${outputDir}/site`;
-  await ensureDir(siteDir);
+export async function generateStaticSite(
+  outputDir: string,
+  report: OverlapReport,
+): Promise<void> {
   const html = `<!doctype html>
 <html lang="en">
   <head>
@@ -114,5 +123,5 @@ export async function generateStaticSite(outputDir: string, report: OverlapRepor
     </main>
   </body>
 </html>`;
-  await Bun.write(`${siteDir}/index.html`, html);
+  await Bun.write(`${outputDir}/index.html`, html);
 }

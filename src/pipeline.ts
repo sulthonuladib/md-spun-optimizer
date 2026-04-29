@@ -25,6 +25,6 @@ export async function runPipeline() {
     includeExpiredPacks: config.includeExpiredPacks,
   });
   await writeUiArtifacts(config.outputDir, report);
-  await generateStaticSite(config.outputDir, report);
+  await generateStaticSite(process.cwd(), report);
   return report.summary;
 }

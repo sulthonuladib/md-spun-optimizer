@@ -4,7 +4,6 @@
   "private": true,
   "scripts": {
     "start": "bun run src/index.ts",
-    "crawl": "bun run src/index.ts",
     "test": "bun test"
   },
   "devDependencies": {
