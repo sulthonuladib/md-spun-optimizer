@@ -10,7 +10,10 @@ function sleep(ms: number): Promise<void> {
 
 class HttpClient {
   constructor(
-    private readonly config: Pick<PipelineConfig, "timeoutMs" | "retries" | "retryDelayMs">,
+    private readonly config: Pick<
+      PipelineConfig,
+      "timeoutMs" | "retries" | "retryDelayMs"
+    >,
   ) {}
 
   async getJson<T>(url: URL): Promise<T> {
@@ -18,10 +21,16 @@ class HttpClient {
     for (let attempt = 1; attempt <= this.config.retries; attempt += 1) {
       try {
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), this.config.timeoutMs);
+        const timer = setTimeout(
+          () => controller.abort(),
+          this.config.timeoutMs,
+        );
         const startedAt = Date.now();
         try {
-          const response = await fetch(url, { method: "GET", signal: controller.signal });
+          const response = await fetch(url, {
+            method: "GET",
+            signal: controller.signal,
+          });
           if (!response.ok) {
             throw new AppError("HTTP request failed", "HTTP_ERROR", {
               url: url.toString(),
@@ -52,9 +61,14 @@ class HttpClient {
         await sleep(this.config.retryDelayMs * attempt);
       }
     }
-    throw new AppError("HTTP request failed after retries", "HTTP_RETRY_EXHAUSTED", {
-      error: lastError instanceof Error ? lastError.message : String(lastError),
-    });
+    throw new AppError(
+      "HTTP request failed after retries",
+      "HTTP_RETRY_EXHAUSTED",
+      {
+        error:
+          lastError instanceof Error ? lastError.message : String(lastError),
+      },
+    );
   }
 }
 
@@ -81,17 +95,25 @@ export class MasterDuelMetaClient {
       appendQuery(url, { page, limit: this.config.pageLimit, ...extraParams });
       const payload = await this.httpClient.getJson<unknown>(url);
       if (!Array.isArray(payload)) {
-        throw new AppError("Unexpected API response shape", "API_INVALID_RESPONSE", {
-          endpoint,
-          page,
-        });
+        throw new AppError(
+          "Unexpected API response shape",
+          "API_INVALID_RESPONSE",
+          {
+            endpoint,
+            page,
+          },
+        );
       }
       const batch = payload as T[];
       if (batch.length === 0) {
         break;
       }
       items.push(...batch);
-      logger.info("Fetched API page", { endpoint, page, batchSize: batch.length });
+      logger.info("Fetched API page", {
+        endpoint,
+        page,
+        batchSize: batch.length,
+      });
       if (batch.length < this.config.pageLimit) {
         break;
       }
@@ -100,7 +122,10 @@ export class MasterDuelMetaClient {
   }
 
   fetchPacks(): Promise<RawPack[]> {
-    return this.fetchPaginated<RawPack>("/sets", { aggregate: "searchSecretPacks", sort: "release" });
+    return this.fetchPaginated<RawPack>("/sets", {
+      aggregate: "searchSecretPacks",
+      sort: "release",
+    });
   }
 
   fetchCards(): Promise<RawCard[]> {

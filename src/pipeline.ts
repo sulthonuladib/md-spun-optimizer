@@ -1,14 +1,32 @@
 import { getConfig } from "./config";
 import { MasterDuelMetaClient, writeRawSnapshots } from "./crawl";
-import { formatTimestamp } from "./fs";
+import { formatTimestamp, ensureDir } from "./fs";
 import { logger } from "./logger";
 import { normalizeDataset } from "./normalize";
 import { buildOverlapReport } from "./analyze";
 import { generateStaticSite, writeNormalizedArtifacts, writeUiArtifacts } from "./output";
+import * as fs from "fs";
+import * as path from "path";
+
+async function cleanupOldSnapshots(outputDir: string) {
+  const rawDir = path.join(outputDir, "raw");
+  if (!fs.existsSync(rawDir)) return;
+  
+  const files = fs.readdirSync(rawDir);
+  for (const file of files) {
+    if (file.startsWith("packs-") || file.startsWith("cards-")) {
+      const filePath = path.join(rawDir, file);
+      fs.unlinkSync(filePath);
+      logger.info("Cleaned up old snapshot", { file });
+    }
+  }
+}
 
 export async function runPipeline() {
   const config = getConfig();
   logger.info("Starting pipeline", config);
+
+  await cleanupOldSnapshots(config.outputDir);
 
   const client = new MasterDuelMetaClient(config);
   const [packs, cards] = await Promise.all([client.fetchPacks(), client.fetchCards()]);

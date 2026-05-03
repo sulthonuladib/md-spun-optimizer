@@ -33,7 +33,7 @@ export function buildOverlapReport(dataset: NormalizedDataset, options: OverlapO
     if (targetRarities.size > 0 && !targetRarities.has(card.rarity)) continue;
 
     const relevantSources = card.sources.filter((source) => {
-      if (source.packType !== "secret" && source.packType !== "selection") return false;
+      if (source.packType !== "secret") return false;
       if (!isKnownPack(source.packId)) return false;
       if (options.includeExpiredPacks) return true;
       return !packById.get(source.packId)?.isExpired;
@@ -71,36 +71,59 @@ export function buildOverlapReport(dataset: NormalizedDataset, options: OverlapO
   }
 
   const candidates = [...candidateById.values()].sort(compareCandidateCards);
+  const shownCardIds = new Set<string>();
   const usedPackIds = new Set<string>();
   const threePack: CandidateCard[] = [];
   const twoPack: CandidateCard[] = [];
   const onePack: CandidateCard[] = [];
 
   for (const candidate of candidates) {
-    const remainingPackIds = candidate.allRelevantPacks.filter(
-      (packId) => !usedPackIds.has(packId) && isKnownPack(packId),
-    );
-    if (remainingPackIds.length === 0) {
+    if (shownCardIds.has(candidate.id)) {
       continue;
     }
 
-    const remainingPackNames = remainingPackIds
+    const relevantPackIds = candidate.allRelevantPacks.filter((packId) => isKnownPack(packId));
+    if (relevantPackIds.length === 0) {
+      continue;
+    }
+
+    const newPackIds = relevantPackIds.filter((packId) => !usedPackIds.has(packId));
+    
+    // Only show if ALL packs are new (no partial usage)
+    if (newPackIds.length !== relevantPackIds.length) {
+      continue;
+    }
+
+    const packNames = relevantPackIds
       .map((packId) => packById.get(packId)?.name ?? "")
       .filter((name) => name.length > 0)
       .sort((a, b) => a.localeCompare(b));
+    
+    const originalTier = toTier(relevantPackIds.length);
     const selected: CandidateCard = {
       ...candidate,
-      allRelevantPacks: remainingPackIds,
-      packNames: remainingPackNames,
+      allRelevantPacks: relevantPackIds,
+      packNames,
     };
 
-    const tier = toTier(remainingPackIds.length);
-    if (tier === 3) threePack.push(selected);
-    if (tier === 2) twoPack.push(selected);
-    if (tier === 1) onePack.push(selected);
-
-    for (const packId of remainingPackIds) {
-      usedPackIds.add(packId);
+    if (originalTier === 3) {
+      threePack.push(selected);
+      shownCardIds.add(candidate.id);
+      for (const packId of newPackIds) {
+        usedPackIds.add(packId);
+      }
+    } else if (originalTier === 2) {
+      twoPack.push(selected);
+      shownCardIds.add(candidate.id);
+      for (const packId of newPackIds) {
+        usedPackIds.add(packId);
+      }
+    } else if (originalTier === 1) {
+      onePack.push(selected);
+      shownCardIds.add(candidate.id);
+      for (const packId of newPackIds) {
+        usedPackIds.add(packId);
+      }
     }
   }
 
